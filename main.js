@@ -11,31 +11,6 @@ function deg2rad(angle) {
 
 
 // Constructor
-function Model(name) {
-    this.name = name;
-    this.iVertexBuffer = gl.createBuffer();
-    this.count = 0;
-
-    this.BufferData = function(vertices) {
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
-
-        this.count = vertices.length/3;
-    }
-
-    this.Draw = function() {
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
-        gl.vertexAttribPointer(shProgram.iAttribVertex, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(shProgram.iAttribVertex);
-   
-        gl.drawArrays(gl.LINE_STRIP, 0, this.count);
-    }
-}
-
-
-// Constructor
 function ShaderProgram(name, program) {
 
     this.name = name;
@@ -54,16 +29,52 @@ function ShaderProgram(name, program) {
 }
 
 
+function resizeCanvas() {
+    const canvas = gl.canvas;
+    const rect = canvas.getBoundingClientRect();
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    const width = Math.max(
+        1,
+        Math.round(rect.width * dpr)
+    );
+
+    const height = Math.max(
+        1,
+        Math.round(rect.height * dpr)
+    );
+
+    if (canvas.width !== width ||
+        canvas.height !== height) {
+
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    gl.viewport(0, 0, canvas.width, canvas.height);
+}
+
+
 /* Draws a colored cube, along with a set of coordinate axes.
  * (Note that the use of the above drawPrimitive function is not an efficient
  * way to draw with WebGL.  Here, the geometry is so simple that it doesn't matter.)
  */
-function draw() { 
+function draw() {
+    resizeCanvas();
+
     gl.clearColor(0,0,0,1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
     /* Set the values of the projection transformation */
-    let projection = m4.perspective(Math.PI/8, 1, 8, 12); 
+    let aspect = gl.canvas.width / gl.canvas.height;
+
+    let projection = m4.perspective(
+        Math.PI / 8,
+        aspect,
+        8,
+        12
+    ); 
     
     /* Get the view matrix from the SimpleRotator object.*/
     let modelView = spaceball.getViewMatrix();
@@ -81,21 +92,9 @@ function draw() {
     gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection );
     
     /* Draw the six faces of a cube, with different colors. */
-    gl.uniform4fv(shProgram.iColor, [1,1,0,1] );
+    gl.uniform4fv(shProgram.iColor, [0.4, 0.85, 0.8, 1.0] );
 
     surface.Draw();
-}
-
-function CreateSurfaceData()
-{
-    let vertexList = [];
-
-    for (let i=0; i<360; i+=5) {
-        vertexList.push( Math.sin(deg2rad(i)), 1, Math.cos(deg2rad(i)) );
-        vertexList.push( Math.sin(deg2rad(i)), 0, Math.cos(deg2rad(i)) );
-    }
-
-    return vertexList;
 }
 
 
@@ -110,8 +109,8 @@ function initGL() {
     shProgram.iModelViewProjectionMatrix = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
     shProgram.iColor                     = gl.getUniformLocation(prog, "color");
 
-    surface = new Model('Surface');
-    surface.BufferData(CreateSurfaceData());
+    surface = new Model('Pear Surface', 40, 48);
+    surface.BufferData();
 
     gl.enable(gl.DEPTH_TEST);
 }
@@ -176,6 +175,8 @@ function init() {
     }
 
     spaceball = new TrackballRotator(canvas, draw, 0);
+
+    window.addEventListener("resize", draw);
 
     draw();
 }
