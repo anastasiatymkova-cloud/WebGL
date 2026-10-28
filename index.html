@@ -6,7 +6,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>PA1 | Pear Surface - Variant 18</title>
+    <title>PA2 | Gouraud Shading - Variant 18</title>
 
     <style>
         * {
@@ -214,6 +214,47 @@
                 padding: 10px;
             }
         }
+        
+        /* PA2 - Surface granularity controls */
+        .controls {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 22px;
+        }
+
+        .controls h3 {
+            margin: 0 0 20px;
+            font-size: 18px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-header span {
+            color: #67d9cf;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #67d9cf;
+            cursor: pointer;
+        }
+
     </style>
 
     <script src="./Utils/trackball-rotator.js"></script>
@@ -231,7 +272,7 @@
         <header>
             <div class="logo">WebGL Surface Viewer</div>
             <div class="assignment">
-                PRACTICAL ASSIGNMENT 01
+                PRACTICAL ASSIGNMENT 02
             </div>
         </header>
 
@@ -243,36 +284,83 @@
             <h1>Surface of Revolution "Pear"</h1>
 
             <p class="description">
-                Interactive 3D wireframe visualization
-                of a pear-shaped mathematical surface
-                using JavaScript and WebGL.
+                Interactive 3D visualization of a pear-shaped
+                mathematical surface using indexed triangles,
+                analytic vertex normals and Gouraud shading.
+                The model features dynamic lighting and
+                adjustable surface granularity.
             </p>
         </section>
 
+        
         <section class="stats">
 
             <div class="stat-card">
-                <div class="stat-value">40</div>
+                <div class="stat-value" id="u-stat">40</div>
                 <div class="stat-label">U Segments</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-value">48</div>
+                <div class="stat-value" id="v-stat">48</div>
                 <div class="stat-label">V Segments</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-value">87</div>
-                <div class="stat-label">Total Polylines</div>
+                <div class="stat-value" id="triangles-stat">3840</div>
+                <div class="stat-label">Total Triangles</div>
             </div>
 
         </section>
+
+        
+        <section class="controls">
+
+            <h3>Surface Granularity</h3>
+
+            <div class="control-group">
+
+                <div class="control-header">
+                    <label for="u-slider">U Segments</label>
+                    <span id="u-value">40</span>
+                </div>
+
+                <input
+                    type="range"
+                    id="u-slider"
+                    min="8"
+                    max="100"
+                    step="1"
+                    value="40"
+                >
+
+            </div>
+
+            <div class="control-group">
+
+                <div class="control-header">
+                    <label for="v-slider">V Segments</label>
+                    <span id="v-value">48</span>
+                </div>
+
+                <input
+                    type="range"
+                    id="v-slider"
+                    min="8"
+                    max="100"
+                    step="1"
+                    value="48"
+                >
+
+            </div>
+
+        </section>
+
 
         <section class="viewer">
 
             <div class="viewer-header">
                 <div class="viewer-title">
-                    3D Wireframe Model
+                    3D Gouraud Shaded Model
                 </div>
 
                 <div class="viewer-badge">
@@ -285,30 +373,41 @@
             </div>
 
             <div class="viewer-footer">
-                Drag your mouse to rotate the model
+                Drag to rotate the model. The light source rotates automatically.
             </div>
 
         </section>
-
+        
         <section class="info">
+
             <h3>About the Model</h3>
 
             <p>
-                The surface is generated using two
-                parameters: U and V.
-                U-polylines follow the profile
-                of the pear, while V-polylines
-                form circular sections around
-                the axis of revolution.
-                Each polyline is stored as
-                a Float32Array and rendered
-                using WebGL LINE_STRIP.
+                This application renders a pear-shaped
+                mathematical surface using indexed triangles
+                and WebGL Vertex Buffer Objects (VBOs).
+
+                The surface is generated parametrically using
+                U and V coordinates. Vertex normals are
+                calculated analytically from the cross product
+                of the partial derivatives.
+
+                Gouraud shading is implemented in the vertex
+                shader using ambient, diffuse and specular
+                lighting components.
+
+                A single point light source moves continuously
+                around the surface.
+
+                Two interactive sliders allow users to adjust
+                the surface granularity along the U and V
+                directions in real time.
             </p>
         </section>
 
         <footer>
-            WebGL Practical Assignment 1 |
-            Variant 18 | Surface of Revolution "Pear"
+            WebGL Practical Assignment 2 |
+            Variant 18 | Gouraud Shading & Analytic Vertex Normals
         </footer>
 
     </div>

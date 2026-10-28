@@ -11,23 +11,26 @@ function deg2rad(angle) {
 
 
 // Constructor
+
 function ShaderProgram(name, program) {
 
     this.name = name;
     this.prog = program;
 
-    // Location of the attribute variable in the shader program.
+    // Vertex attributes
     this.iAttribVertex = -1;
-    // Location of the uniform specifying a color for the primitive.
-    this.iColor = -1;
-    // Location of the uniform matrix representing the combined transformation.
-    this.iModelViewProjectionMatrix = -1;
+    this.iAttribNormal = -1;
+
+    // Uniform variables
+    this.iColor = null;
+    this.iModelViewMatrix = null;
+    this.iModelViewProjectionMatrix = null;
+    this.iLightPosition = null;
 
     this.Use = function() {
         gl.useProgram(this.prog);
-    }
+    };
 }
-
 
 function resizeCanvas() {
     const canvas = gl.canvas;
@@ -90,6 +93,55 @@ function draw() {
     let modelViewProjection = m4.multiply(projection, matAccum1 );
 
     gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection );
+
+    // Send ModelView matrix to the vertex shader
+    gl.uniformMatrix4fv(
+        shProgram.iModelViewMatrix,
+        false,
+        matAccum1
+    );
+
+    // Rotating point light around the surface
+    const time = performance.now() * 0.001;
+
+    // Rotation speed (radians per second)
+    const speed = 0.7;
+
+    const angle = time * speed;
+
+    // Circular path radius
+    const radius = 3.0;
+
+    // Light position in model coordinates
+    const lightModel = [
+        radius * Math.cos(angle),
+        2.0,
+        radius * Math.sin(angle)
+    ];
+
+    // Transform light position into eye coordinates
+    const lightEye = [
+        matAccum1[0] * lightModel[0] +
+        matAccum1[4] * lightModel[1] +
+        matAccum1[8] * lightModel[2] +
+        matAccum1[12],
+
+        matAccum1[1] * lightModel[0] +
+        matAccum1[5] * lightModel[1] +
+        matAccum1[9] * lightModel[2] +
+        matAccum1[13],
+
+        matAccum1[2] * lightModel[0] +
+        matAccum1[6] * lightModel[1] +
+        matAccum1[10] * lightModel[2] +
+        matAccum1[14]
+    ];
+
+    // Pass light position to GPU
+    gl.uniform3fv(
+        shProgram.iLightPosition,
+        lightEye
+    );
     
     /* Draw the six faces of a cube, with different colors. */
     gl.uniform4fv(shProgram.iColor, [0.4, 0.85, 0.8, 1.0] );
@@ -97,6 +149,70 @@ function draw() {
     surface.Draw();
 }
 
+// Continuous rendering animation
+function animate() {
+    draw();
+    requestAnimationFrame(animate);
+}
+
+// Rebuild the surface when U or V changes
+function updateSurface() {
+
+    // Read slider values
+    const u = Number(
+        document.getElementById("u-slider").value
+    );
+
+    const v = Number(
+        document.getElementById("v-slider").value
+    );
+
+    // Update surface granularity
+    surface.uSegments = u;
+    surface.vSegments = v;
+
+    // Regenerate vertices, normals and indices
+    const mesh = surface.GenerateTriangleMesh();
+
+    // Upload new data to existing GPU buffers
+    surface.BufferData(
+        mesh.vertices,
+        mesh.indices,
+        mesh.normals
+    );
+
+    // Update slider labels
+    document.getElementById("u-value").textContent = u;
+    document.getElementById("v-value").textContent = v;
+
+    // Update statistics
+    document.getElementById("u-stat").textContent = u;
+    document.getElementById("v-stat").textContent = v;
+
+    document.getElementById("triangles-stat").textContent =
+        mesh.indices.length / 3;
+}
+
+// Initialize U and V sliders
+function initSurfaceControls() {
+
+    const uSlider =
+        document.getElementById("u-slider");
+
+    const vSlider =
+        document.getElementById("v-slider");
+
+    // Set initial values from the model
+    uSlider.value = surface.uSegments;
+    vSlider.value = surface.vSegments;
+
+    // Rebuild surface when slider changes
+    uSlider.addEventListener("input", updateSurface);
+    vSlider.addEventListener("input", updateSurface);
+
+    // Synchronize labels and statistics
+    updateSurface();
+}
 
 /* Initialize the WebGL context. Called from init() */
 function initGL() {
@@ -105,12 +221,59 @@ function initGL() {
     shProgram = new ShaderProgram('Basic', prog);
     shProgram.Use();
 
-    shProgram.iAttribVertex              = gl.getAttribLocation(prog, "vertex");
-    shProgram.iModelViewProjectionMatrix = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
-    shProgram.iColor                     = gl.getUniformLocation(prog, "color");
+    
+    // Vertex attributes
+    shProgram.iAttribVertex =
+        gl.getAttribLocation(prog, "vertex");
 
+    shProgram.iAttribNormal =
+        gl.getAttribLocation(prog, "normal");
+
+    // Matrices
+    shProgram.iModelViewMatrix =
+        gl.getUniformLocation(
+            prog,
+            "ModelViewMatrix"
+        );
+
+    shProgram.iModelViewProjectionMatrix =
+        gl.getUniformLocation(
+            prog,
+            "ModelViewProjectionMatrix"
+        );
+
+    // Light and material color
+    shProgram.iLightPosition =
+        gl.getUniformLocation(
+            prog,
+            "LightPosition"
+        );
+
+    shProgram.iColor =
+        gl.getUniformLocation(prog, "color");
+
+    
     surface = new Model('Pear Surface', 40, 48);
-    surface.BufferData();
+
+    // Generate indexed triangle mesh
+    const mesh = surface.GenerateTriangleMesh();
+
+    // Upload geometry to GPU
+    surface.BufferData(
+        mesh.vertices,
+        mesh.indices,
+        mesh.normals
+    );
+
+    console.log(
+        "Vertices:",
+        mesh.vertices.length / 3
+    );
+
+    console.log(
+        "Triangles:",
+        mesh.indices.length / 3
+    );
 
     gl.enable(gl.DEPTH_TEST);
 }
@@ -178,5 +341,9 @@ function init() {
 
     window.addEventListener("resize", draw);
 
-    draw();
+    // Initialize interactive sliders
+    initSurfaceControls();
+
+    // Start continuous light animation
+    requestAnimationFrame(animate);
 }
