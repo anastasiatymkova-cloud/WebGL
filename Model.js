@@ -9,12 +9,20 @@ function Model(name, uSegments = 40, vSegments = 48) {
     this.uSegments = uSegments;
     this.vSegments = vSegments;
 
-    // PA2: Vertex Buffer Object and Index Buffer
+    // Vertex Buffer Objects and Index Buffer
     this.iVertexBuffer = gl.createBuffer();
     this.iNormalBuffer = gl.createBuffer();
+    this.iTexCoordsBuffer = gl.createBuffer();
+    this.iTangentBuffer = gl.createBuffer();
     this.iIndexBuffer = gl.createBuffer();
 
     this.count = 0;
+
+    // Texture identifiers
+    this.idTextureDiffuse = null;
+    this.idTextureSpecular = null;
+    this.idTextureNormal = null;
+
     
     // Variant 18: Surface of Revolution "Pear"
     // Equation: z^3(a - z) - b^2(x^2 + y^2) = 0
@@ -111,11 +119,23 @@ function Model(name, uSegments = 40, vSegments = 48) {
     };
     
     
+    // Tangent vector along the texture U direction
+    this.GetTangent = function(u, v) {
+
+        const tx = -Math.sin(v);
+        const ty = 0;
+        const tz = Math.cos(v);
+
+        return [tx, ty, tz];
+    };
+    
     // Generate indexed triangle mesh with analytic normals
     this.GenerateTriangleMesh = function() {
 
         const vertices = [];
         const normals = [];
+        const texCoords = [];
+        const tangents = [];
         const indices = [];
 
         const rowSize = this.vSegments + 1;
@@ -136,6 +156,16 @@ function Model(name, uSegments = 40, vSegments = 48) {
                 // Analytic vertex normal
                 const normal = this.GetNormal(u, v);
                 normals.push(...normal);
+
+                // Tangent vector
+                const tangent = this.GetTangent(u, v);
+                tangents.push(...tangent);
+
+                // UV texture coordinates
+                const s = j / this.vSegments;
+                const t = i / this.uSegments;
+
+                texCoords.push(s, t);
             }
         }
 
@@ -157,12 +187,14 @@ function Model(name, uSegments = 40, vSegments = 48) {
         return {
             vertices: new Float32Array(vertices),
             normals: new Float32Array(normals),
+            texCoords: new Float32Array(texCoords),
+            tangents: new Float32Array(tangents),
             indices: new Uint16Array(indices)
         };
     };
     
     // Upload geometry and normals to GPU
-    this.BufferData = function(vertices, indices, normals) {
+    this.BufferData = function(vertices, indices, normals, texCoords, tangents) {
 
         // Upload vertex positions
         gl.bindBuffer(
@@ -187,6 +219,30 @@ function Model(name, uSegments = 40, vSegments = 48) {
             normals,
             gl.STATIC_DRAW
         );
+        
+        // Upload texture coordinates
+        gl.bindBuffer(
+            gl.ARRAY_BUFFER,
+            this.iTexCoordsBuffer
+        );
+
+        gl.bufferData(
+            gl.ARRAY_BUFFER,
+            texCoords,
+            gl.STATIC_DRAW
+        );
+
+        // Upload tangent vectors
+        gl.bindBuffer(
+            gl.ARRAY_BUFFER,
+            this.iTangentBuffer
+        );
+
+        gl.bufferData(
+            gl.ARRAY_BUFFER,
+            tangents,
+            gl.STATIC_DRAW
+        );
 
         // Upload triangle indices
         gl.bindBuffer(
@@ -206,6 +262,26 @@ function Model(name, uSegments = 40, vSegments = 48) {
     
     // Draw indexed triangles with vertex normals
     this.Draw = function() {
+        // Bind diffuse texture
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(
+            gl.TEXTURE_2D,
+            this.idTextureDiffuse
+        );
+
+        // Bind specular texture
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(
+            gl.TEXTURE_2D,
+            this.idTextureSpecular
+        );
+
+        // Bind normal texture
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(
+            gl.TEXTURE_2D,
+            this.idTextureNormal
+        );
 
         // Vertex position attribute
         gl.bindBuffer(
@@ -243,6 +319,44 @@ function Model(name, uSegments = 40, vSegments = 48) {
 
         gl.enableVertexAttribArray(
             shProgram.iAttribNormal
+        );
+
+        // Texture coordinates attribute
+        gl.bindBuffer(
+            gl.ARRAY_BUFFER,
+            this.iTexCoordsBuffer
+        );
+
+        gl.vertexAttribPointer(
+            shProgram.iAttribTexCoords,
+            2,
+            gl.FLOAT,
+            false,
+            0,
+            0
+        );
+
+        gl.enableVertexAttribArray(
+            shProgram.iAttribTexCoords
+        );
+
+        // Tangent attribute
+        gl.bindBuffer(
+            gl.ARRAY_BUFFER,
+            this.iTangentBuffer
+        );
+
+        gl.vertexAttribPointer(
+            shProgram.iAttribTangent,
+            3,
+            gl.FLOAT,
+            false,
+            0,
+            0
+        );
+
+        gl.enableVertexAttribArray(
+            shProgram.iAttribTangent
         );
 
         // Indexed triangle rendering

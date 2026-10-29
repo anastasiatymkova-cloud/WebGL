@@ -1,64 +1,68 @@
-# WebGL — Practical Assignment 2
+# WebGL ControlTask — Variant 18
 
-**Student:** TR-62mp Anastasiia Tymkova  
-**Variant:** 18
+## Three-Texture Rendering and Normal Mapping
+This project extends Practical Assignment 2 (PA2) by adding three-texture rendering and per-pixel normal mapping to a mathematical 3D surface.
 
-## Project Description
-This project is a continuation of Practical Assignment 1.
+**Variant 18: Prioritize Normal**
 
-It implements an interactive 3D visualization of a pear-shaped mathematical surface using WebGL.
+## Surface Model
+The application renders a pear-shaped surface of revolution defined by:
 
-The surface is rendered with filled triangles using Vertex Buffer Objects (VBOs) and an index buffer.
+z³(a − z) − b²(x² + y²) = 0
 
-## Variant 18
-- Shading method: Gouraud Shading
-- Vertex normal calculation: Analytic Normal
+The surface is generated parametrically using indexed triangles and analytic vertex normals.
 
 ## Implemented Features
-- Indexed triangle rendering using WebGL VBOs
-- Parametric pear-shaped surface generation
-- Analytic vertex normals using partial derivatives
-- Gouraud shading in the vertex shader
-- Ambient, diffuse and specular lighting
-- A single rotating point light source
-- Interactive U and V granularity sliders
-- Dynamic surface mesh regeneration
-- Perspective projection
-- Mouse-controlled model rotation
+- Diffuse texture for surface color.
+- Specular texture for reflected highlights.
+- Normal texture for per-pixel surface detail.
+- UV texture coordinates and tangent vectors.
+- Gram-Schmidt orthogonalization with normal priority.
+- TBN matrix for tangent-space normal mapping.
+- Ambient, diffuse and specular lighting.
+- Rotating point light source.
+- Interactive 3D model rotation.
+- Adjustable U and V surface segments.
+- Normal Mapping ON/OFF comparison.
 
-## Implementation
-The surface is generated parametrically using U and V coordinates.
+## Variant 18 — Normal Priority
+Gram-Schmidt orthogonalization preserves the normal vector and corrects the tangent:
 
-Analytic normals are calculated using the cross product of the partial derivatives of the surface.
+```glsl
+vec3 N = normalize(vNormalEye);
 
-Lighting is calculated per vertex using the Gouraud shading technique. The resulting colors are interpolated across the triangles.
+vec3 T = normalize(
+    vTangentEye - N * dot(N, vTangentEye)
+);
 
-The point light source rotates around the surface and dynamically changes its illumination.
+vec3 B = normalize(cross(N, T));
+```
 
-## Technologies
-- JavaScript
-- HTML5
-- CSS3
-- WebGL
-- GLSL
+The resulting TBN matrix transforms normals from tangent space into eye space for per-pixel lighting.
+
+## Project Files
+- `index.html` — user interface.
+- `main.js` — WebGL initialization, lighting and interaction.
+- `Model.js` — surface geometry, normals, tangents and GPU buffers.
+- `shader.gpu` — vertex and fragment shaders.
+- `TextureHandler.js` — texture loading.
+- `generate_textures.py` — procedural texture generation.
+- `textures/` — diffuse, specular and normal textures.
+- `Utils/` — matrix operations and trackball rotation.
 
 ## How to Run
-1. Clone or download the repository.
-2. Open the project folder.
-3. Start a local HTTP server.
-4. Open http://localhost:8000 in a browser.
+1. Open the project folder in Visual Studio Code.
+2. Install the Live Server extension.
+3. Open `index.html` with Live Server.
+4. Rotate the 3D model using the mouse.
+5. Adjust U and V segments using the sliders.
+6. Toggle Normal Mapping to compare the lighting results.
 
-Python server command:
+The generated PNG textures are included in the project.
 
-    python -m http.server 8000
+## Technologies
+JavaScript, WebGL 1.0, GLSL, HTML, CSS, Python and Pillow.
 
-## Controls
-- Drag the mouse to rotate the model.
-- Use the U slider to adjust U segments.
-- Use the V slider to adjust V segments.
-- Observe the rotating point light source.
-
-## Reference
-Based on the WebGL practical assignment materials provided by the instructor:
-
-https://github.com/ademch/WebGL/tree/PA2
+## Author
+TR-62mp Anastasiia Tymkova    
+Variant 18

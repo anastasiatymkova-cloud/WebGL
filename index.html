@@ -6,7 +6,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>PA2 | Gouraud Shading - Variant 18</title>
+    <title>ControlTask | Normal Mapping - Variant 18</title>
 
     <style>
         * {
@@ -255,12 +255,30 @@
             cursor: pointer;
         }
 
+        /* ControlTask - Normal Mapping toggle */
+        .normal-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e2e8f0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .normal-toggle input {
+            width: 18px;
+            height: 18px;
+            accent-color: #67d9cf;
+            cursor: pointer;
+        }
+
     </style>
 
     <script src="./Utils/trackball-rotator.js"></script>
     <script src="./Utils/m4.js"></script>
     <script src="./shader.gpu"></script>
     <script src="./Model.js"></script>
+    <script src="./TextureHandler.js"></script>
     <script src="./main.js"></script>
 
 </head>
@@ -272,7 +290,7 @@
         <header>
             <div class="logo">WebGL Surface Viewer</div>
             <div class="assignment">
-                PRACTICAL ASSIGNMENT 02
+                CONTROL TASK
             </div>
         </header>
 
@@ -285,10 +303,11 @@
 
             <p class="description">
                 Interactive 3D visualization of a pear-shaped
-                mathematical surface using indexed triangles,
-                analytic vertex normals and Gouraud shading.
-                The model features dynamic lighting and
-                adjustable surface granularity.
+                mathematical surface with diffuse, specular
+                and normal textures. The application implements
+                per-pixel lighting and Gram-Schmidt
+                orthogonalization with normal priority
+                according to Variant 18.
             </p>
         </section>
 
@@ -352,6 +371,27 @@
                 >
 
             </div>
+            
+            <div class="control-group">
+
+                <div class="control-header">
+                    <label for="normal-map-toggle">
+                        Normal Mapping
+                    </label>
+
+                    <span>Prioritize Normal</span>
+                </div>
+
+                <label class="normal-toggle">
+                    <input
+                        type="checkbox"
+                        id="normal-map-toggle"
+                        checked
+                    >
+                    Enable normal texture
+                </label>
+
+            </div>
 
         </section>
 
@@ -360,7 +400,7 @@
 
             <div class="viewer-header">
                 <div class="viewer-title">
-                    3D Gouraud Shaded Model
+                    3D Textured Model - Normal Mapping
                 </div>
 
                 <div class="viewer-badge">
@@ -381,33 +421,37 @@
         <section class="info">
 
             <h3>About the Model</h3>
-
+            
             <p>
                 This application renders a pear-shaped
-                mathematical surface using indexed triangles
-                and WebGL Vertex Buffer Objects (VBOs).
+                mathematical surface defined by a parametric
+                equation using indexed triangles and WebGL.
 
-                The surface is generated parametrically using
-                U and V coordinates. Vertex normals are
-                calculated analytically from the cross product
-                of the partial derivatives.
+                The model extends Practical Assignment 2
+                by introducing three texture maps:
+                diffuse, specular and normal.
 
-                Gouraud shading is implemented in the vertex
-                shader using ambient, diffuse and specular
-                lighting components.
+                The diffuse texture controls the surface
+                color, while the specular texture controls
+                the intensity of reflected highlights.
 
-                A single point light source moves continuously
-                around the surface.
+                The normal texture provides per-pixel
+                normals for detailed surface lighting.
 
-                Two interactive sliders allow users to adjust
-                the surface granularity along the U and V
-                directions in real time.
+                Gram-Schmidt orthogonalization is used
+                to construct an orthonormal TBN basis.
+                According to Variant 18, the normal vector
+                is prioritized and the tangent is corrected.
+
+                The application also includes a rotating
+                light source, interactive model rotation
+                and adjustable surface granularity.
             </p>
         </section>
 
         <footer>
-            WebGL Practical Assignment 2 |
-            Variant 18 | Gouraud Shading & Analytic Vertex Normals
+            WebGL ControlTask |
+            Variant 18 | Three Textures & Normal Priority
         </footer>
 
     </div>

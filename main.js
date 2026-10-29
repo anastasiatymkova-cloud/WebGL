@@ -20,12 +20,22 @@ function ShaderProgram(name, program) {
     // Vertex attributes
     this.iAttribVertex = -1;
     this.iAttribNormal = -1;
+    this.iAttribTexCoords = -1;
+    this.iAttribTangent = -1;
 
     // Uniform variables
     this.iColor = null;
     this.iModelViewMatrix = null;
     this.iModelViewProjectionMatrix = null;
     this.iLightPosition = null;
+
+    // Texture samplers
+    this.iTMU0 = null;
+    this.iTMU1 = null;
+    this.iTMU2 = null;
+
+    // Normal mapping control
+    this.iNormalMapStrength = null;
 
     this.Use = function() {
         gl.useProgram(this.prog);
@@ -143,9 +153,30 @@ function draw() {
         lightEye
     );
     
-    /* Draw the six faces of a cube, with different colors. */
-    gl.uniform4fv(shProgram.iColor, [0.4, 0.85, 0.8, 1.0] );
+    // White base color preserves diffuse texture colors
+    gl.uniform4fv(
+        shProgram.iColor,
+        [1.0, 1.0, 1.0, 1.0]
+    );
 
+    // Assign texture units to shader samplers
+    gl.uniform1i(shProgram.iTMU0, 0);
+    gl.uniform1i(shProgram.iTMU1, 1);
+    gl.uniform1i(shProgram.iTMU2, 2);
+
+    // Read normal mapping toggle
+    const normalMapEnabled =
+        document.getElementById(
+            "normal-map-toggle"
+        ).checked;
+
+    // Enable or disable normal mapping
+    gl.uniform1f(
+        shProgram.iNormalMapStrength,
+        normalMapEnabled ? 1.0 : 0.0
+    );
+
+    // Draw the textured pear surface
     surface.Draw();
 }
 
@@ -173,12 +204,14 @@ function updateSurface() {
 
     // Regenerate vertices, normals and indices
     const mesh = surface.GenerateTriangleMesh();
-
-    // Upload new data to existing GPU buffers
+    
+    // Upload updated geometry and texture data
     surface.BufferData(
         mesh.vertices,
         mesh.indices,
-        mesh.normals
+        mesh.normals,
+        mesh.texCoords,
+        mesh.tangents
     );
 
     // Update slider labels
@@ -228,6 +261,15 @@ function initGL() {
 
     shProgram.iAttribNormal =
         gl.getAttribLocation(prog, "normal");
+    
+    // Texture coordinates attribute
+    shProgram.iAttribTexCoords =
+        gl.getAttribLocation(prog, "tex");
+
+    // Tangent attribute
+    shProgram.iAttribTangent =
+        gl.getAttribLocation(prog, "tangent");
+
 
     // Matrices
     shProgram.iModelViewMatrix =
@@ -251,6 +293,25 @@ function initGL() {
 
     shProgram.iColor =
         gl.getUniformLocation(prog, "color");
+    
+    // Diffuse texture sampler
+    shProgram.iTMU0 =
+        gl.getUniformLocation(prog, "iTMU0");
+
+    // Specular texture sampler
+    shProgram.iTMU1 =
+        gl.getUniformLocation(prog, "iTMU1");
+
+    // Normal texture sampler
+    shProgram.iTMU2 =
+        gl.getUniformLocation(prog, "iTMU2");
+
+    // Normal mapping strength
+    shProgram.iNormalMapStrength =
+        gl.getUniformLocation(
+            prog,
+            "NormalMapStrength"
+        );
 
     
     surface = new Model('Pear Surface', 40, 48);
@@ -258,11 +319,31 @@ function initGL() {
     // Generate indexed triangle mesh
     const mesh = surface.GenerateTriangleMesh();
 
-    // Upload geometry to GPU
+    // Upload geometry and texture data to GPU
     surface.BufferData(
         mesh.vertices,
         mesh.indices,
-        mesh.normals
+        mesh.normals,
+        mesh.texCoords,
+        mesh.tangents
+    );
+    
+    // Load diffuse texture
+    surface.idTextureDiffuse = LoadTexture(
+        "textures/pear_diffuse.png",
+        [185, 190, 76, 255]
+    );
+
+    // Load specular texture
+    surface.idTextureSpecular = LoadTexture(
+        "textures/pear_specular.png",
+        [55, 55, 55, 255]
+    );
+
+    // Load normal texture
+    surface.idTextureNormal = LoadTexture(
+        "textures/pear_normal.png",
+        [128, 128, 255, 255]
     );
 
     console.log(
